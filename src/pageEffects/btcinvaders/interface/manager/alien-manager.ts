@@ -20,7 +20,7 @@ export class AlienManager {
 
     getRandomAliveEnemy(): Alien {
         const random = Phaser.Math.RND.integerInRange(1, this.aliens.children.size);
-        const aliens = this.aliens.children.getArray() as Alien[];
+        const aliens = Array.from(this.aliens.children) as Alien[];
         return aliens[random];
     }
 
@@ -44,7 +44,7 @@ export class AlienManager {
     }
 
     private _animate() {
-        this.aliens.children.iterate((c: Phaser.GameObjects.GameObject) => {
+        this.aliens.children.forEach((c: Phaser.GameObjects.GameObject) => {
             this._scene.tweens.add({
                 targets: c,
                 ease: "Linear",
@@ -55,7 +55,6 @@ export class AlienManager {
                 yoyo: true,
                 repeat: -1
             })
-            return true
         })
     }
 }
