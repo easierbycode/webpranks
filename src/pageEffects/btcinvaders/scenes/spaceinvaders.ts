@@ -1,5 +1,6 @@
 /* adapted from github.com/trungk18/space-invaders-phaser-3*/
 import { PageInfo } from '../../../modhelper'
+import { BASE } from '../../../basePath'
 
 import { AssetType, SoundType } from "../interface/assets";
 import { Bullet } from "../interface/bullet";
@@ -41,7 +42,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.setBaseURL("/assets/spaceinvaders");
+        this.load.setBaseURL(`${BASE}/assets/spaceinvaders`);
         this.load.image(AssetType.Starfield, "/images/starfield.png");
         this.load.image(AssetType.Bullet, "/images/bullet.png");
         this.load.image(AssetType.EnemyBullet, "/images/enemy-bullet.png");

@@ -14,8 +14,10 @@ function inlineCssPlugin() {
 			const htmlPath = path.join(distDir, 'index.html')
 			let html = fs.readFileSync(htmlPath, 'utf-8')
 
-			// Find the app CSS link (not Bootstrap CDN)
-			const cssLinkMatch = html.match(/<link rel="stylesheet" crossorigin href="(\/assets\/index-[^"]+\.css)">/)
+			// Find the app CSS link (not Bootstrap CDN). The optional non-capturing
+			// prefix tolerates a deploy base (e.g. /webpranks); group 1 captures the
+			// on-disk path under dist/, which has no base prefix.
+			const cssLinkMatch = html.match(/<link rel="stylesheet" crossorigin href="[^"]*(\/assets\/index-[^"]+\.css)">/)
 			if (!cssLinkMatch) return
 
 			const cssPath = path.join(distDir, cssLinkMatch[1])
@@ -29,6 +31,10 @@ function inlineCssPlugin() {
 }
 
 export default defineConfig(({ command }) => ({
+	// Deploy base. Defaults to '/' (Netlify, root domain). The GitHub Pages
+	// project-site build sets VITE_BASE=/webpranks/ so assets resolve under the
+	// /webpranks subpath at easierbycode.com/webpranks.
+	base: process.env.VITE_BASE ?? '/',
 	plugins: [
 		react(),
 		inlineCssPlugin(),

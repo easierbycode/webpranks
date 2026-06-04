@@ -9,8 +9,9 @@ import '../index.css'
 import '../App.css'
 import { enableDebugMode } from '../debugMode'
 import { useLocalServer } from '../network'
+import { asset } from '../basePath'
 
-const navlogo = '/jesterhead-200.png'
+const navlogo = asset('/jesterhead-200.png')
 
 export const ShowControlsContext = React.createContext<{
 	showControls: boolean
@@ -65,7 +66,7 @@ function AboutNavItem() {
 					<sup>†</sup> Use responsibly around bosses and IT departments.
 				</small>
 				<div className="mt-2">
-					<a href="/about">Read more on our About Page</a>
+					<a href={asset('/about')}>Read more on our About Page</a>
 				</div>
 			</Popover.Body>
 		</Popover>
@@ -95,7 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 	useEffect(() => {
 		// Load GoatCounter analytics
 		const script1 = document.createElement('script')
-		script1.src = '/count.js'
+		script1.src = asset('/count.js')
 		script1.async = true
 		script1.setAttribute('data-goatcounter', '/count')
 		document.head.appendChild(script1)

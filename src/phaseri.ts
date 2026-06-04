@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { PageInfo } from "./domtoobjects"
 import { setBackgroundAndCreateDomObjects } from './modhelper'
 import { log, ll } from './util'
+import { BASE } from './basePath'
 
 
 
@@ -14,6 +15,9 @@ export function setupWorld(parentElement: HTMLElement, width: number, height: nu
 		parent: parentElement,
 		width: width,
 		height: height,
+		// Prefix every loader request with the deploy base so game assets resolve
+		// under /webpranks on GitHub Pages (empty string = root, no-op on Netlify).
+		loader: { baseURL: BASE },
 		physics: {
 			default: 'arcade',
 			arcade: {

@@ -6,7 +6,8 @@ import { Form } from 'react-bootstrap'
 import { effectModules, debugModule } from './pageEffects/modulelist'
 import { isDebugMode } from './debugMode'
 import { Phase } from './phase'
-const popinImage = '/jester-320.png'
+import { asset } from './basePath'
+const popinImage = asset('/jester-320.png')
 
 let prankChosen = false
 
