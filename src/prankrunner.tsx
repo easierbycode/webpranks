@@ -20,6 +20,7 @@ const effectModuleLoaders: Record<string, () => Promise<{ doPageEffect: (pageInf
 	'birthday': () => import('./pageEffects/birthday'),
 	'btcinvaders/scenes/btcinvaders': () => import('./pageEffects/btcinvaders/scenes/btcinvaders'),
 	'godzilla': () => import('./pageEffects/godzilla'),
+	'meteor': () => import('./pageEffects/meteor'),
 	'debug': () => import('./pageEffects/debug'),
 }
 
@@ -322,7 +323,6 @@ export function PrankRunner(props: PrankRunnerProps) {
 						setCurrentScene(scene)
 						setShowControls(false);
 						dispatchPhase(Phase.prankRunning)
-						window.goatcounter?.count({ path: 'prank-start/' + effectModules[iPrank].slug, title: 'Prank Start: ' + effectModules[iPrank].title, event: true })
 					})
 					.catch(err => log(ll.error, err.message))
 			}

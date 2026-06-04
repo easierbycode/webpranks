@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from 'react-bootstrap/Navbar'
 import Nav from 'react-bootstrap/Nav'
@@ -92,19 +92,6 @@ function AboutNavItem() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
 	const [showControls, setShowControls] = useState(true)
-
-	useEffect(() => {
-		// Load GoatCounter analytics
-		const script1 = document.createElement('script')
-		script1.src = asset('/count.js')
-		script1.async = true
-		script1.setAttribute('data-goatcounter', '/count')
-		document.head.appendChild(script1)
-
-		return () => {
-			// Cleanup if needed
-		}
-	}, [])
 
 	return (
 		<div className="App">

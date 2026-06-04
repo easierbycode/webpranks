@@ -5,6 +5,11 @@ on:
     branches: [master]
   workflow_dispatch:
 
+# Run the JavaScript-based actions (checkout, setup-node, deploy-pages, …) on
+# Node 24, which becomes the runner default after 2026-06-16.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # Allow the GITHUB_TOKEN to deploy to Pages.
 permissions:
   contents: read
@@ -26,12 +31,12 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
