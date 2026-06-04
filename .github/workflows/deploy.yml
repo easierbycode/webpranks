@@ -36,11 +36,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          # Node 22 (LTS) runs the build. Vite 5.4 does not build correctly on
-          # Node 24 (it emits a partial bundle with no index.html); the JS-based
-          # *actions* still run on Node 24 via FORCE_JAVASCRIPT_ACTIONS_TO_NODE24
-          # above. Bump this to 24 only after upgrading Vite to v6+.
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
