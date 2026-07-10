@@ -84,8 +84,22 @@ export function PrankRunner(props: PrankRunnerProps) {
 	const location = useLocation()
 	const { prank: paramPrank, url: paramUrl, isRunning: paramIsRunning } = useParams<{ prank?: string; url?: string; isRunning?: string }>()
 
+	// Kiosk mode (/:prank/:url/auto?t=10&return=<url>): no UI or prompts, the
+	// prank auto-starts as soon as the page loads, and after `t` seconds the
+	// browser is redirected to `return`. Captured once on first render because
+	// later navigate() calls strip the third path param and the query string.
+	const kiosk = useRef<{ enabled: boolean; seconds: number; returnUrl: string | null } | null>(null)
+	if (kiosk.current === null) {
+		const search = new URLSearchParams(window.location.search)
+		kiosk.current = {
+			enabled: isRunningParam === 'auto',
+			seconds: parseFloat(search.get('t') ?? '') || 10,
+			returnUrl: search.get('return'),
+		}
+	}
+
 	const { setShowControls: setNavbarVisible } = React.useContext(ShowControlsContext)
-	const [showControls, setShowControlsRaw] = useState(true)
+	const [showControls, setShowControlsRaw] = useState(!kiosk.current.enabled)
 	function setShowControls(v: boolean) {
 		setShowControlsRaw(v)
 		setNavbarVisible(v)
@@ -127,9 +141,12 @@ export function PrankRunner(props: PrankRunnerProps) {
 		const handleUnload = () => { console.log('window unloading'); setShowPopout(false) }
 
 		window.addEventListener('beforeunload', handleUnload)
-		document.addEventListener("keydown", handleKeyDown, false)
-		window.addEventListener("click", handleClickOrTouch, false)
-		window.addEventListener("touchstart", handleClickOrTouch, false)
+		// Kiosk mode drives itself — no click-to-start, Esc-pause, or controls toggle.
+		if (!kiosk.current?.enabled) {
+			document.addEventListener("keydown", handleKeyDown, false)
+			window.addEventListener("click", handleClickOrTouch, false)
+			window.addEventListener("touchstart", handleClickOrTouch, false)
+		}
 
 		let url = ""
 		if (urlParam) {
@@ -153,6 +170,9 @@ export function PrankRunner(props: PrankRunnerProps) {
 		const shouldRun = isRunningParam === '1'
 		if (shouldRun && urlParam && i !== undefined) {
 			dispatchPhase(Phase.startPrankAfterMouseOrKeyPress)
+		}
+		if (kiosk.current?.enabled) {
+			setShowControls(false)
 		}
 
 		return () => {
@@ -254,6 +274,10 @@ export function PrankRunner(props: PrankRunnerProps) {
 
 	//load webpage when url changes
 	function loadPage(url: string, width = windowWidth, height = windowHeight) {
+		// window dimensions can be 0 when loading straight from a shared/kiosk
+		// URL before the first layout — fall back to live window size
+		width = width || window.innerWidth || 1280
+		height = height || window.innerHeight || 800
 		setPageImage(null)
 		setPageInfo(null)
 		log(ll.info, `fetching page at url ${url} with size ${width} x ${height}`)
@@ -300,6 +324,30 @@ export function PrankRunner(props: PrankRunnerProps) {
 		if (inputURL)
 			navigate(`/${effectModules[whichPrank].slug}/${encodeURIComponent(inputURL)}`, { replace: true })
 	}, [whichPrank]);
+
+	// Kiosk mode: start the prank the moment the page finishes loading — no click required.
+	useEffect(() => {
+		if (kiosk.current?.enabled && pageInfo && phase === Phase.targetUrlEntered)
+			dispatchPhase(Phase.startingPrank)
+	}, [pageInfo, phase]);
+
+	// Kiosk mode: once the prank is running, redirect back when the timer expires.
+	useEffect(() => {
+		if (!kiosk.current?.enabled || phase !== Phase.prankRunning) return
+		const { seconds, returnUrl } = kiosk.current
+		if (!returnUrl) return
+		const id = setTimeout(() => { window.location.href = returnUrl }, seconds * 1000)
+		return () => clearTimeout(id)
+	}, [phase]);
+
+	// Kiosk mode: if the page fetch fails there is no UI to recover with — bail
+	// back to the return URL instead of stranding the user on an error screen.
+	useEffect(() => {
+		if (!kiosk.current?.enabled || !showFailure || !kiosk.current.returnUrl) return
+		const returnUrl = kiosk.current.returnUrl
+		const id = setTimeout(() => { window.location.href = returnUrl }, 2000)
+		return () => clearTimeout(id)
+	}, [showFailure]);
 
 	async function runPrank(iPrank = whichPrank, loadingPromise = isLoading) {
 		try {
