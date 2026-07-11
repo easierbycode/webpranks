@@ -13,6 +13,7 @@ import type Phaser from 'phaser'
 import { logDomTree } from './dom'
 import { PrankForm } from './prankform'
 import { effectModules } from './pageEffects/modulelist'
+import { kioskConfig } from './kioskConfig'
 
 const effectModuleLoaders: Record<string, () => Promise<{ doPageEffect: (pageInfo: PageInfo) => unknown }>> = {
 	'wreckingball': () => import('./pageEffects/wreckingball'),
@@ -88,14 +89,23 @@ export function PrankRunner(props: PrankRunnerProps) {
 	// prank auto-starts as soon as the page loads, and after `t` seconds the
 	// browser is redirected to `return`. Captured once on first render because
 	// later navigate() calls strip the third path param and the query string.
-	const kiosk = useRef<{ enabled: boolean; seconds: number; returnUrl: string | null } | null>(null)
+	const kiosk = useRef<{ enabled: boolean; seconds: number; returnUrl: string | null; embed: boolean } | null>(null)
 	if (kiosk.current === null) {
 		const search = new URLSearchParams(window.location.search)
+		// `embed=1` means we're running inside another app's iframe (the
+		// squad-game bonus round): report back via postMessage, never redirect.
+		const embed = search.get('embed') === '1'
+		const seconds = parseFloat(search.get('t') ?? '') || 10
 		kiosk.current = {
 			enabled: isRunningParam === 'auto',
-			seconds: parseFloat(search.get('t') ?? '') || 10,
+			seconds,
 			returnUrl: search.get('return'),
+			embed,
 		}
+		// Stash where page-effect scenes can still read it after react-router
+		// strips the query string.
+		kioskConfig.embed = embed
+		kioskConfig.seconds = seconds
 	}
 
 	const { setShowControls: setNavbarVisible } = React.useContext(ShowControlsContext)
@@ -332,8 +342,11 @@ export function PrankRunner(props: PrankRunnerProps) {
 	}, [pageInfo, phase]);
 
 	// Kiosk mode: once the prank is running, redirect back when the timer expires.
+	// Embedded runs skip this — the effect scene owns the countdown and reports
+	// its score to the parent via postMessage instead of redirecting the iframe.
 	useEffect(() => {
 		if (!kiosk.current?.enabled || phase !== Phase.prankRunning) return
+		if (kiosk.current.embed) return
 		const { seconds, returnUrl } = kiosk.current
 		if (!returnUrl) return
 		const id = setTimeout(() => { window.location.href = returnUrl }, seconds * 1000)
@@ -343,7 +356,17 @@ export function PrankRunner(props: PrankRunnerProps) {
 	// Kiosk mode: if the page fetch fails there is no UI to recover with — bail
 	// back to the return URL instead of stranding the user on an error screen.
 	useEffect(() => {
-		if (!kiosk.current?.enabled || !showFailure || !kiosk.current.returnUrl) return
+		if (!kiosk.current?.enabled || !showFailure) return
+		// Embedded (squad-game bonus round): tell the parent to recover the game
+		// rather than redirecting inside the iframe.
+		if (kiosk.current.embed) {
+			const id = setTimeout(() => {
+				if (window.parent && window.parent !== window)
+					window.parent.postMessage({ source: 'meteor-smash', type: 'done', score: 0, error: true }, '*')
+			}, 1500)
+			return () => clearTimeout(id)
+		}
+		if (!kiosk.current.returnUrl) return
 		const returnUrl = kiosk.current.returnUrl
 		const id = setTimeout(() => { window.location.href = returnUrl }, 2000)
 		return () => clearTimeout(id)
